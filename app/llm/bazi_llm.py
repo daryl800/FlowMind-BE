@@ -291,13 +291,15 @@ def generate_bazi_narrative_safe(bazi_data, llm="openai", lang="en"):
     with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
         future = executor.submit(_run)
         try:
-            return future.result(timeout=LLM_TIMEOUT)
+            llm_reflection = future.result(timeout=LLM_TIMEOUT)
+            print(f"=== LLM SUCCESS： 【{llm}】 ===\n OUTPUT: {llm_reflection}\n{'-'*40}")
+            return llm_reflection
 
         except Exception as e:
             print(f"[LLM ERROR] {llm} failed: {e}")
 
             if llm != FALLBACK_LLM:
-                print(f"[LLM FALLBACK] Switching to {FALLBACK_LLM}")
+                print(f"【LLM FALLBACK】Switching from 【{llm}】 to 【{FALLBACK_LLM}】")
                 return generate_bazi_narrative_safe(
                     bazi_data,
                     llm=FALLBACK_LLM,
@@ -305,6 +307,7 @@ def generate_bazi_narrative_safe(bazi_data, llm="openai", lang="en"):
                 )
 
             raise
+
 
 
 # -----------------------------
