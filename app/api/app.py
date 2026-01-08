@@ -1,8 +1,8 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime
-from schemas import BaziRequest
-from bazi_report import generate_full_report
+from app.bazi.schemas import BaziRequest
+from app.bazi.report import generate_full_report
 from typing import Literal
 
 app = FastAPI(title="FlowMind BE")

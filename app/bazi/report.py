@@ -1,7 +1,7 @@
 from datetime import datetime
-from bazi_engine import calc_bazi
-from bazi_llm import generate_bazi_narrative_safe
-from bazi_llm import enrich_with_localized_pillars
+from app.bazi.engine import calc_bazi
+from app.llm.bazi_llm import generate_bazi_narrative_safe
+from app.llm.bazi_llm import enrich_with_localized_pillars
 
 def generate_full_report(dt: "datetime", gender="Male", location="Asia/Hong_Kong", year="2026", llm="openai", lang="en"):
     bazi = calc_bazi(dt, tz_name=location)

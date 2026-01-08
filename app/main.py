@@ -1,5 +1,5 @@
 from datetime import datetime
-from bazi_report import generate_full_report
+from bazi.report import generate_full_report
 import json
 
 dt_test = datetime(1966,10,9,7,0)

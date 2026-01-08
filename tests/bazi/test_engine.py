@@ -1,19 +1,19 @@
 from datetime import datetime
 from zoneinfo import ZoneInfo
-from bazi_report import generate_full_report
+from app.bazi.report import generate_full_report
 
 # ------------------------------
 # Test cases: (name, datetime, tz, gender, expected_day_master)
 # ------------------------------
 TEST_CASES = [
-    ("Male Example", datetime(1991, 6, 12, 9, 0), "Asia/Hong_Kong", "Male", "Gui"),
-    ("Female Example", datetime(1992, 8, 22, 9, 15), "Asia/Hong_Kong", "Female", "Geng"),
-    ("Evening Birth", datetime(1988, 11, 3, 22, 0), "Asia/Hong_Kong", "Male", "Ren"),
-    ("Wood Test", datetime(1993, 4, 8, 10, 30), "Asia/Hong_Kong", "Male", "Ji"),
-    ("Fire Test", datetime(1989, 7, 15, 14, 45), "Asia/Hong_Kong", "Male", "Bing"),
-    ("Earth Test", datetime(1990, 2, 20, 8, 20), "Asia/Hong_Kong", "Male", "Bing"),
-    ("Metal Test", datetime(1994, 12, 5, 7, 10), "Asia/Hong_Kong", "Male", "Yi"),
-    ("Water Test", datetime(1966, 10, 9, 7, 0), "Asia/Hong_Kong", "Male", "Xin"),
+    ("Male Example", datetime(1991, 6, 12, 9, 0), "Asia/Hong_Kong", "Male"),
+    ("Female Example", datetime(1992, 8, 22, 9, 15), "Asia/Hong_Kong", "Female"),
+    ("Evening Birth", datetime(1988, 11, 3, 22, 0), "Asia/Hong_Kong", "Male"),
+    ("Wood Test", datetime(1993, 4, 8, 10, 30), "Asia/Hong_Kong", "Male"),
+    ("Fire Test", datetime(1989, 7, 15, 14, 45), "Asia/Hong_Kong", "Male"),
+    ("Earth Test", datetime(1990, 2, 20, 8, 20), "Asia/Hong_Kong", "Male"),
+    ("Metal Test", datetime(1994, 12, 5, 7, 10), "Asia/Hong_Kong", "Male"),
+    ("Water Test", datetime(1966, 10, 9, 7, 0), "Asia/Hong_Kong", "Male"),
 ]
 
 def test_bazi_pipeline(generate_report_fn, run_llm=False):

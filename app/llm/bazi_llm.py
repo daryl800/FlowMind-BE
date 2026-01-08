@@ -10,13 +10,13 @@ from tencentcloud.common.profile.http_profile import HttpProfile
 
 import concurrent.futures
 
-from constants import QIANWEN_API_KEY, TENCENT_SECRET_ID, TENCENT_SECRET_KEY, OPENAI_API_KEY
-from constants import QIANWEN_LLM_MODEL, HUNYUAN_LLM_MODEL, OPENAI_LLM_MODEL
+from app.config.settings import QIANWEN_API_KEY, TENCENT_SECRET_ID, TENCENT_SECRET_KEY, OPENAI_API_KEY
+from app.config.settings import QIANWEN_LLM_MODEL, HUNYUAN_LLM_MODEL, OPENAI_LLM_MODEL
 
-from bazi_engine import GAN, GAN_MAP, localize_pillars
+from app.bazi.engine import GAN, GAN_MAP, localize_pillars
 
 FALLBACK_LLM = "openai"
-LLM_TIMEOUT = 20  # seconds
+LLM_TIMEOUT = 50  # seconds
 
 if not OPENAI_API_KEY:
     raise ValueError("Please set OPENAI_API_KEY in your environment")
@@ -73,60 +73,65 @@ def safe_parse_json(text: str):
 # -----------------------------
 def build_bazi_prompt(bazi_data, lang="en"):
     """
-    Build a BaZi LLM prompt that emphasizes the specific year.
+    Build a BaZi LLM prompt that emphasizes the specific year
+    and following 蘇民峰's philosophy.
     """
+    import json
+
     year = bazi_data.get("year", 2026)
     
     return f"""
-        You are a professional Chinese fortune-teller and life coach.
+        You are a professional Chinese fortune-teller and life coach, following 蘇民峰's philosophy: always **balance the strongest elements** rather than enhancing them.
 
         Input BaZi data:
         {json.dumps(bazi_data, ensure_ascii=False)}
 
-        Generate a **JSON report** ONLY with the following structure, focusing on **what is unique or different for the year {year}** compared to other years:
+        Generate a **JSON report ONLY** with the following structure, focusing on **what is unique or different for the year {year}** compared to other years:
 
         {{
-        "year_{year}_outlook": {{
-            "theme": "",
-            "health": "",
-            "relationships": "",
-            "career": "",
-            "investment": "",
-            "key_advice": ""
-        }},
-        "lucky_elements": {{
-            "favorable_elements": [],
-            "unfavorable_elements": []
-        }},
-        "lucky_colors_numbers": {{
-            "colors": [],
-            "numbers": []
-        }},
-        "regional_advice": {{
-            "suitable_regions": [],
-            "avoid_regions": [],
-            "directions": "",
-            "reasoning": ""
-        }},
-        "career_and_investment": {{
-            "suitable_careers": [],
-            "unsuitable_careers": [],
-            "investment_tendency": ""
-        }},
-        "amulet": "" 
+            "lucky_elements": {{
+                "favorable_elements": [],
+                "unfavorable_elements": []
+            }},
+            "lucky_colors_numbers": {{
+                "colors": [],
+                "numbers": []
+            }},
+            "regional_advice": {{
+                "suitable_regions_globally": [],
+                "avoid_regions": [],
+                "directions": "",
+                "reasoning": ""
+            }},
+            "career_and_investment": {{
+                "suitable_careers": [],
+                "unsuitable_careers": [],
+                "investment_tendency": ""
+            }},
+            "year_{year}_outlook": {{
+                "theme": "",
+                "health": "",
+                "relationships": "",
+                "career": "",
+                "investment": "",
+                "key_advice": ""
+            }},
+            "amulet": "" 
         }}
 
         Instructions for the LLM:
 
-        1. Emphasize **year-specific opportunities, challenges, and changes** compared to previous years.  
-        2. Highlight any **seasonal, directional, or Five Elements interactions** unique to {year}.  
-        3. For career, relationships, and health, **mention what is new or different this year**.  
-        4. For lucky elements, colors, numbers, regions, and directions, **tailor them to the year's specific interactions with the BaZi chart**.  
-        5. For `amulet`, suggest an object or talisman specifically beneficial for {year}.  
-        6. Make the JSON **directly parsable** with no extra text.  
-        7. Provide content in **{lang}**.
+        1. Identify the **strongest element(s)** in the BaZi chart and recommend **regions, directions, colors, numbers, and careers that balance these strong elements** (do NOT reinforce them).  
+        2. Emphasize **year-specific opportunities, challenges, and changes** compared to previous years.  
+        3. Highlight any **seasonal, directional, or Five Elements interactions** unique to {year}.  
+        4. For career, relationships, and health, **mention what is new or different this year**, while ensuring element balance.  
+        5. For lucky elements, colors, numbers, regions, and directions, **tailor them to the year's interactions with the BaZi chart and the balance philosophy**.  
+        6. For `amulet`, suggest an object or talisman specifically beneficial for {year} that helps balance the elements.  
+        7. Make the JSON **directly parsable** with no extra text.  
+        8. Only use **8 cardinal and intercardinal directions**: North, Northeast, East, Southeast, South, Southwest, West, Northwest.  
+        9. Provide content in **{lang}**.  
+        10. Set deterministic reasoning: do not provide contradictory or multiple options. Provide a **single coherent set**.
     """
-
 
 # -----------------------------
 # OpenAI implementation
@@ -134,13 +139,13 @@ def build_bazi_prompt(bazi_data, lang="en"):
 def _generate_oa(bazi_data, lang="en"):
     prompt = build_bazi_prompt(bazi_data, lang)
     resp = client_oa.chat.completions.create(
-        model=OPENAI_LLM_MODEL,
-        messages=[
+        model = OPENAI_LLM_MODEL,
+        messages = [
             {"role":"system","content": "You are a professional Chinese fortune-teller and life coach"},
             {"role":"user","content":prompt}
         ],
-        temperature=0.7,
-        max_tokens=1000
+        temperature = 0 , # ✅ 設定為0，減低隨機性，輸出會固定
+        max_tokens = 1500
     )
 
     if not resp.choices or not resp.choices[0].message:
@@ -166,7 +171,7 @@ def _generate_hy(bazi_data, lang="en"):
 
     req = models.ChatCompletionsRequest()
     req.Model = HUNYUAN_LLM_MODEL
-    req.Temperature = 0.7
+    req.Temperature = 0  # ✅ 設定為0，減低隨機性，輸出會固定
     req.Messages = messages
 
     resp = client.ChatCompletions(req)
@@ -188,10 +193,10 @@ def _generate_qw(bazi_data, lang="en"):
     prompt = build_bazi_prompt(bazi_data, lang)
 
     response = dashscope.Generation.call(
-        model=QIANWEN_LLM_MODEL,
-        prompt=system_prompt + "\n\n" + prompt,
-        temperature=0.6,
-        max_tokens=1500
+        model = QIANWEN_LLM_MODEL,
+        prompt = system_prompt + "\n\n" + prompt,
+        temperature = 0, # ✅ 設定為0，減低隨機性，輸出會固定
+        max_tokens = 1500
     )
 
     output_text = None
@@ -229,13 +234,13 @@ def enrich_with_localized_pillars(bazi_basic, lang="en"):
 # -----------------------------
 # Unified interface
 # -----------------------------    
-def generate_bazi_narrative(bazi_data, llm="qianwen", lang="en"):
+def generate_bazi_narrative(bazi_data, llm="openai", lang="en"):
     """
     Generate BaZi narrative JSON using the specified LLM.
     llm: "openai", "hunyuan", "qianwen"
     lang: "en" or "cn"
     """
-    if llm.lower() == "openai":
+    if llm.lower() in ["openai", "oa"]:
         return _generate_oa(bazi_data, lang)
     elif llm.lower() in ["hunyuan", "hy"]:
         return _generate_hy(bazi_data, lang)
@@ -244,7 +249,7 @@ def generate_bazi_narrative(bazi_data, llm="qianwen", lang="en"):
     else:
         raise ValueError(f"Unknown LLM: {llm}")
 
-def generate_bazi_narrative_safe(bazi_data, llm="qianwen", lang="en"):
+def generate_bazi_narrative_safe(bazi_data, llm="openai", lang="en"):
     """
     Wrapper with timeout + fallback.
     Does NOT change JSON schema.
@@ -281,26 +286,29 @@ if __name__ == "__main__":
             "year": {"gan": "Bing", "zhi": "Wu"},
             "month": {"gan": "Wu", "zhi": "Xu"},
             "day": {"gan": "Xin", "zhi": "Chou"},
-            "hour": {"gan": "Ren", "zhi": "Chen"}
+            "hour": {"gan": "Xin", "zhi": "Mao"}
         },
         "day_master": "Xin",
         "five_elements_strength": {
-            "Wood": 0, "Fire": 3, "Earth": 3, "Metal": 1, "Water": 1
-        },
-        "datetime": "1966-10-09T07:00:00",
-        "gender": "Male",
-        "location": "Asia/Hong_Kong"
+            "Wood": 1,
+            "Fire": 3,
+            "Earth": 2,
+            "Metal": 2,
+            "Water": 0
+        }
     }
 
     # for llm_name in ["openai", "hunyuan", "qianwen"]:
     #     print(f"\n=== Test LLM: {llm_name} ===")
-    #     result = generate_bazi_narrative_safe(test_bazi, llm=llm_name, lang='cn')
+    #     result = generate_bazi_narrative(test_bazi, llm=llm_name, lang='cn')
     #     # Enrich with localized pillars
     #     if "bazi_basic" in result:
     #         enrich_with_localized_pillars(result["bazi_basic"], lang='cn')
     #     print(result)
 
-    llm_name="openai"
+
+    llm_name="qw"
+    print(f"\n=== Querying LLM: {llm_name} ===")
     result = generate_bazi_narrative_safe(test_bazi, llm=llm_name, lang='cn')
-    print(result)
+    print(str(result))
     
