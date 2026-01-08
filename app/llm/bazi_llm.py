@@ -71,6 +71,98 @@ def safe_parse_json(text: str):
 # -----------------------------
 # Prompt template (shared)
 # -----------------------------
+# def build_bazi_prompt(bazi_data, lang="en"):
+#     """
+#     Build a BaZi LLM prompt that emphasizes the specific year
+#     and following 蘇民峰's philosophy.
+#     """
+#     import json
+
+#     year = bazi_data.get("year", 2026)
+    
+#     return f"""
+#         You are a professional Chinese fortune-teller and life coach, following 蘇民峰's philosophy: always **balance the strongest elements** rather than enhancing them.
+
+#         Input BaZi data:
+#         {json.dumps(bazi_data, ensure_ascii=False)}
+
+#         Generate a **JSON report ONLY** with the following structure, focusing on **what is unique or different for the year {year}** compared to other years:
+
+#         {{
+#             "lucky_elements": {{
+#                 "favorable_elements": [],
+#                 "unfavorable_elements": []
+#             }},
+#             "lucky_colors_numbers": {{
+#                 "colors": [],
+#                 "numbers": []
+#             }},
+#             "regional_advice": {{
+#                 "favorable_regions": [],
+#                 "unfavorable_regions": [],
+#                 "directions": "",
+#                 "reasoning": ""
+#             }},
+#             "career_and_investment": {{
+#                 "favorable_careers": [],
+#                 "unfavorable_careers": [],
+#                 "investment_tendency": ""
+#             }},
+#             "year_{year}_outlook": {{
+#                 "theme": "",
+#                 "health": "",
+#                 "relationships": "",
+#                 "career": "",
+#                 "investment": "",
+#                 "key_advice": ""
+#             }},
+#             "amulet": "" 
+#         }}
+
+#         Instructions for the LLM:
+
+#         1. Identify the strongest element(s) in the BaZi chart as the PRIMARY reference,
+#         and recommend regions, directions, colors, numbers, and careers that BALANCE
+#         these elements (do NOT reinforce them).
+
+#         2. Emphasize year-specific opportunities, challenges, and changes unique to {year}
+#         compared to previous years.
+
+#         3. Highlight seasonal, directional, and Five-Element interactions that are
+#         specific to {year} and this BaZi chart.
+
+#         4. For career, relationships, and health, describe what is NEW or DIFFERENT
+#         this year while maintaining Five-Element balance.
+
+#         5. Lucky elements, colors, numbers, regions, and directions must be derived
+#         from the interaction between the BaZi chart and the year {year},
+#         following balance-first principles.
+
+#         6. Regional advice must use ONLY broad global regions.
+#         Allowed regions are STRICTLY LIMITED to:
+#         East Asia, Southeast Asia, South Asia, Middle East,
+#         Europe, Africa, North America, South America, Oceania.
+#         Do NOT mention countries, cities, provinces, climates, or local features.
+
+#         7. For `amulet`, suggest ONE specific object beneficial for {year}
+#         that helps restore Five-Element balance.
+
+#         8. Output STRICTLY valid JSON only.
+#         No explanations, no markdown, no examples, no extra text.
+
+#         9. Only use the following 8 directions:
+#         North, Northeast, East, Southeast,
+#         South, Southwest, West, Northwest.
+
+#         10. Use language: {lang}.
+
+#         11. Deterministic reasoning ONLY:
+#             - no alternatives
+#             - no multiple options
+#             - no contradictory interpretations
+#             - one single coherent result set
+#     """
+
 def build_bazi_prompt(bazi_data, lang="en"):
     """
     Build a BaZi LLM prompt that emphasizes the specific year
@@ -80,13 +172,81 @@ def build_bazi_prompt(bazi_data, lang="en"):
 
     year = bazi_data.get("year", 2026)
     
+    # return f"""
+    #     As a professional Chinese fortune-teller and life coach adhering to 蘇民峰's philosophy, your task is to provide a balanced analysis of the given BaZi data. Focus on balancing the strongest elements rather than enhancing them.
+
+    #     Input BaZi data:
+    #     {json.dumps(bazi_data, ensure_ascii=False)}
+
+    #     Generate a **JSON report ONLY** with the following structure, emphasizing what is unique or different for the year {year}:
+
+    #     {{
+    #         "lucky_elements": {{
+    #             "favorable_elements": [],
+    #             "unfavorable_elements": []
+    #         }},
+    #         "lucky_colors_numbers": {{
+    #             "colors": [],
+    #             "numbers": []
+    #         }},
+    #         "regional_advice": {{
+    #             "favorable_regions": [],
+    #             "unfavorable_regions": [],
+    #             "directions": "",
+    #             "reasoning": ""
+    #         }},
+    #         "career_and_investment": {{
+    #             "favorable_careers": [],
+    #             "unfavorable_careers": [],
+    #             "investment_tendency": ""
+    #         }},
+    #         "year_{year}_outlook": {{
+    #             "theme": "",
+    #             "health": "",
+    #             "relationships": "",
+    #             "career": "",
+    #             "investment": "",
+    #             "key_advice": ""
+    #         }},
+    #         "amulet": "" 
+    #     }}
+
+    #     Instructions for the LLM:
+
+    #     1. Analyze the provided BaZi chart to identify the strongest element(s) as the PRIMARY reference. Recommend regions, directions, colors, numbers, and careers that BALANCE these elements (do NOT reinforce them).
+
+    #     2. Pay special attention to opportunities, challenges, and changes unique to {year}. Highlight how this year differs from previous years in terms of Five-Element interactions and their impact on the individual's life aspects.
+
+    #     3. Discuss seasonal, directional, and Five-Element interactions specific to {year} and the given BaZi chart. Emphasize any new or changing dynamics.
+
+    #     4. In career, relationships, and health sections, describe what is NEW or DIFFERENT this year while maintaining Five-Element balance.
+
+    #     5. Ensure lucky elements, colors, numbers, regions, and directions are derived from the interaction between the BaZi chart and the year {year}, strictly following balance-first principles.
+
+    #     6. Regional advice should be broad, using only global regions: East Asia, Southeast Asia, South Asia, Middle East, Europe, Africa, North America, South America, Oceania. Do NOT mention countries, cities, provinces, climates, or local features.
+
+    #     7. Suggest ONE specific amulet beneficial for {year} that aids in restoring Five-Element balance.
+
+    #     8. Output STRICTLY valid JSON only. No explanations, no markdown, no examples, no extra text.
+
+    #     9. Use only the following 8 directions: North, Northeast, East, Southeast, South, Southwest, West, Northwest.
+
+    #     10. Use language: {lang}.
+
+    #     11. Apply deterministic reasoning ONLY: no alternatives, no multiple options, no contradictory interpretations—provide one single coherent result set.
+    # """
+
     return f"""
-        You are a professional Chinese fortune-teller and life coach, following 蘇民峰's philosophy: always **balance the strongest elements** rather than enhancing them.
+        You are a master of classical Chinese BaZi命理 (子平術), trained in the authentic Ziping tradition. Your analysis must follow these core principles:
+        1. First determine if the Day Master (日主) is strong or weak based on monthly branch, support from other pillars, and hidden stems.
+        2. Prioritize 調候用神 (seasonal regulation): e.g., autumn-born Metal needs Water to cool and refine; summer-born Wood needs Water to moisten.
+        3. Favorable elements are those that either: (a) support a weak Day Master, (b) drain/cool an overly dry/hot chart, or (c) resolve harmful clashes.
+        4. Never assume "strong element = bad". Instead, judge based on balance, season, and function.
 
         Input BaZi data:
         {json.dumps(bazi_data, ensure_ascii=False)}
 
-        Generate a **JSON report ONLY** with the following structure, focusing on **what is unique or different for the year {year}** compared to other years:
+        Generate a **JSON report ONLY** with the following structure, emphasizing what is unique or different for the year {year}:
 
         {{
             "lucky_elements": {{
@@ -119,49 +279,32 @@ def build_bazi_prompt(bazi_data, lang="en"):
             "amulet": "" 
         }}
 
-        Instructions for the LLM:
+        Instructions:
 
-        1. Identify the strongest element(s) in the BaZi chart as the PRIMARY reference,
-        and recommend regions, directions, colors, numbers, and careers that BALANCE
-        these elements (do NOT reinforce them).
+        1. Analyze the Day Master's strength and seasonal context FIRST. For example:辛金 born in 戌月 (autumn) is typically dry and brittle, requiring Water for 調候—even if Fire appears dominant.
 
-        2. Emphasize year-specific opportunities, challenges, and changes unique to {year}
-        compared to previous years.
+        2. Derive favorable/unfavorable elements from classical use-god logic (用神/忌神), NOT by simply weakening the most frequent element.
 
-        3. Highlight seasonal, directional, and Five-Element interactions that are
-        specific to {year} and this BaZi chart.
+        3. Regional advice must reflect the **climatic elemental nature** of each region:
+        - Cold/humid = Water (e.g., North America, Europe)
+        - Temperate/rainy = Wood + Water (e.g., East Asia)
+        - Hot/dry = Fire + Earth (e.g., Middle East, Africa, South/Southeast Asia)
+        Use only these allowed regions: East Asia, Southeast Asia, South Asia, Middle East, Europe, Africa, North America, South America, Oceania.
 
-        4. For career, relationships, and health, describe what is NEW or DIFFERENT
-        this year while maintaining Five-Element balance.
+        4. Directions must align with classical Eight Mansion or seasonal Qi flow (e.g., North = Water, East = Wood). Choose ONE direction that best supports the use-god.
 
-        5. Lucky elements, colors, numbers, regions, and directions must be derived
-        from the interaction between the BaZi chart and the year {year},
-        following balance-first principles.
+        5. Focus on what is NEW in {year}: how the year pillar ({year} = 丙午) interacts with the natal chart—especially clashes (冲), combinations (合), or elemental shifts.
 
-        6. Regional advice must use ONLY broad global regions.
-        Allowed regions are STRICTLY LIMITED to:
-        East Asia, Southeast Asia, South Asia, Middle East,
-        Europe, Africa, North America, South America, Oceania.
-        Do NOT mention countries, cities, provinces, climates, or local features.
+        6. Careers and investments should match the functional role of favorable elements (e.g., Water = wisdom, flow, healing → education, logistics, healthcare).
 
-        7. For `amulet`, suggest ONE specific object beneficial for {year}
-        that helps restore Five-Element balance.
+        7. Amulet: suggest ONE traditional object (e.g., black obsidian, jade, crystal) that embodies the primary favorable element.
 
-        8. Output STRICTLY valid JSON only.
-        No explanations, no markdown, no examples, no extra text.
+        8. Output STRICTLY valid JSON. No extra text, markdown, or explanations.
 
-        9. Only use the following 8 directions:
-        North, Northeast, East, Southeast,
-        South, Southwest, West, Northwest.
+        9. Use language: {lang}.
 
-        10. Use language: {lang}.
-
-        11. Deterministic reasoning ONLY:
-            - no alternatives
-            - no multiple options
-            - no contradictory interpretations
-            - one single coherent result set
-    """
+        10. Apply deterministic, coherent reasoning—no contradictions, no multiple interpretations.
+        """
 
 # -----------------------------
 # OpenAI implementation
