@@ -98,14 +98,14 @@ def build_bazi_prompt(bazi_data, lang="en"):
                 "numbers": []
             }},
             "regional_advice": {{
-                "suitable_regions_globally": [],
-                "avoid_regions": [],
+                "favorable_regions": [],
+                "unfavorable_regions": [],
                 "directions": "",
                 "reasoning": ""
             }},
             "career_and_investment": {{
-                "suitable_careers": [],
-                "unsuitable_careers": [],
+                "favorable_careers": [],
+                "unfavorable_careers": [],
                 "investment_tendency": ""
             }},
             "year_{year}_outlook": {{
@@ -121,16 +121,46 @@ def build_bazi_prompt(bazi_data, lang="en"):
 
         Instructions for the LLM:
 
-        1. Identify the **strongest element(s)** in the BaZi chart and recommend **regions, directions, colors, numbers, and careers that balance these strong elements** (do NOT reinforce them).  
-        2. Emphasize **year-specific opportunities, challenges, and changes** compared to previous years.  
-        3. Highlight any **seasonal, directional, or Five Elements interactions** unique to {year}.  
-        4. For career, relationships, and health, **mention what is new or different this year**, while ensuring element balance.  
-        5. For lucky elements, colors, numbers, regions, and directions, **tailor them to the year's interactions with the BaZi chart and the balance philosophy**.  
-        6. For `amulet`, suggest an object or talisman specifically beneficial for {year} that helps balance the elements.  
-        7. Make the JSON **directly parsable** with no extra text.  
-        8. Only use **8 cardinal and intercardinal directions**: North, Northeast, East, Southeast, South, Southwest, West, Northwest.  
-        9. Provide content in **{lang}**.  
-        10. Set deterministic reasoning: do not provide contradictory or multiple options. Provide a **single coherent set**.
+        1. Identify the strongest element(s) in the BaZi chart as the PRIMARY reference,
+        and recommend regions, directions, colors, numbers, and careers that BALANCE
+        these elements (do NOT reinforce them).
+
+        2. Emphasize year-specific opportunities, challenges, and changes unique to {year}
+        compared to previous years.
+
+        3. Highlight seasonal, directional, and Five-Element interactions that are
+        specific to {year} and this BaZi chart.
+
+        4. For career, relationships, and health, describe what is NEW or DIFFERENT
+        this year while maintaining Five-Element balance.
+
+        5. Lucky elements, colors, numbers, regions, and directions must be derived
+        from the interaction between the BaZi chart and the year {year},
+        following balance-first principles.
+
+        6. Regional advice must use ONLY broad global regions.
+        Allowed regions are STRICTLY LIMITED to:
+        East Asia, Southeast Asia, South Asia, Middle East,
+        Europe, Africa, North America, South America, Oceania.
+        Do NOT mention countries, cities, provinces, climates, or local features.
+
+        7. For `amulet`, suggest ONE specific object beneficial for {year}
+        that helps restore Five-Element balance.
+
+        8. Output STRICTLY valid JSON only.
+        No explanations, no markdown, no examples, no extra text.
+
+        9. Only use the following 8 directions:
+        North, Northeast, East, Southeast,
+        South, Southwest, West, Northwest.
+
+        10. Use language: {lang}.
+
+        11. Deterministic reasoning ONLY:
+            - no alternatives
+            - no multiple options
+            - no contradictory interpretations
+            - one single coherent result set
     """
 
 # -----------------------------
