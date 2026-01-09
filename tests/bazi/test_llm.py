@@ -31,9 +31,9 @@ sample_inputs = [
 # -----------------------------
 # Retry Wrapper
 # -----------------------------
-def generate_with_retry(bazi_data, llm="openai", lang="en", retries=2, delay=1):
+def generate_with_retry(bazi_data, target_year="2026", llm="openai", lang="en", retries=2, delay=1):
     for attempt in range(1, retries + 1):
-        report = generate_bazi_narrative_safe(bazi_data, llm, lang=lang)
+        report = generate_bazi_narrative_safe(bazi_data, target_year=target_year, llm=llm, lang=lang)
         if "error" not in report:
             return report
         print(f"⚠ Attempt {attempt} failed, retrying in {delay}s...")
@@ -46,12 +46,12 @@ def generate_with_retry(bazi_data, llm="openai", lang="en", retries=2, delay=1):
 # -----------------------------
 for i, bazi in enumerate(sample_inputs, 1):
     
-    llm = "openai"  # Change as needed: "openai", "qianwen", "tencent"
+    llm = "qw"  # Change as needed: "openai", "qianwen", "tencent"
     lang = "cn"
 
     print(f"\n=== Test Case LLM: #{llm} ===")
 
-    report = generate_with_retry(bazi, llm=llm, lang=lang, retries=3, delay=2)
+    report = generate_with_retry(bazi, target_year="2026", llm=llm, lang=lang, retries=3, delay=2)
     
     if "error" in report:
         print("❌ LLM JSON Parsing Error after retries")

@@ -16,7 +16,7 @@ from app.config.settings import QIANWEN_LLM_MODEL, HUNYUAN_LLM_MODEL, OPENAI_LLM
 from app.bazi.engine import GAN, GAN_MAP, localize_pillars
 
 FALLBACK_LLM = "openai"
-LLM_TIMEOUT = 50  # seconds
+LLM_TIMEOUT = 800  # seconds
 
 if not OPENAI_API_KEY:
     raise ValueError("Please set OPENAI_API_KEY in your environment")
@@ -68,249 +68,242 @@ def safe_parse_json(text: str):
     return json.loads(json_text)
 
 
-# -----------------------------
-# Prompt template (shared)
-# -----------------------------
-# def build_bazi_prompt(bazi_data, lang="en"):
-#     """
-#     Build a BaZi LLM prompt that emphasizes the specific year
-#     and following 蘇民峰's philosophy.
-#     """
-#     import json
 
-#     year = bazi_data.get("year", 2026)
-    
-#     return f"""
-#         You are a professional Chinese fortune-teller and life coach, following 蘇民峰's philosophy: always **balance the strongest elements** rather than enhancing them.
+def build_bazi_prompt(bazi_data, target_year=2026, lang="zh"):
 
-#         Input BaZi data:
-#         {json.dumps(bazi_data, ensure_ascii=False)}
-
-#         Generate a **JSON report ONLY** with the following structure, focusing on **what is unique or different for the year {year}** compared to other years:
-
-#         {{
-#             "lucky_elements": {{
-#                 "favorable_elements": [],
-#                 "unfavorable_elements": []
-#             }},
-#             "lucky_colors_numbers": {{
-#                 "colors": [],
-#                 "numbers": []
-#             }},
-#             "regional_advice": {{
-#                 "favorable_regions": [],
-#                 "unfavorable_regions": [],
-#                 "directions": "",
-#                 "reasoning": ""
-#             }},
-#             "career_and_investment": {{
-#                 "favorable_careers": [],
-#                 "unfavorable_careers": [],
-#                 "investment_tendency": ""
-#             }},
-#             "year_{year}_outlook": {{
-#                 "theme": "",
-#                 "health": "",
-#                 "relationships": "",
-#                 "career": "",
-#                 "investment": "",
-#                 "key_advice": ""
-#             }},
-#             "amulet": "" 
-#         }}
-
-#         Instructions for the LLM:
-
-#         1. Identify the strongest element(s) in the BaZi chart as the PRIMARY reference,
-#         and recommend regions, directions, colors, numbers, and careers that BALANCE
-#         these elements (do NOT reinforce them).
-
-#         2. Emphasize year-specific opportunities, challenges, and changes unique to {year}
-#         compared to previous years.
-
-#         3. Highlight seasonal, directional, and Five-Element interactions that are
-#         specific to {year} and this BaZi chart.
-
-#         4. For career, relationships, and health, describe what is NEW or DIFFERENT
-#         this year while maintaining Five-Element balance.
-
-#         5. Lucky elements, colors, numbers, regions, and directions must be derived
-#         from the interaction between the BaZi chart and the year {year},
-#         following balance-first principles.
-
-#         6. Regional advice must use ONLY broad global regions.
-#         Allowed regions are STRICTLY LIMITED to:
-#         East Asia, Southeast Asia, South Asia, Middle East,
-#         Europe, Africa, North America, South America, Oceania.
-#         Do NOT mention countries, cities, provinces, climates, or local features.
-
-#         7. For `amulet`, suggest ONE specific object beneficial for {year}
-#         that helps restore Five-Element balance.
-
-#         8. Output STRICTLY valid JSON only.
-#         No explanations, no markdown, no examples, no extra text.
-
-#         9. Only use the following 8 directions:
-#         North, Northeast, East, Southeast,
-#         South, Southwest, West, Northwest.
-
-#         10. Use language: {lang}.
-
-#         11. Deterministic reasoning ONLY:
-#             - no alternatives
-#             - no multiple options
-#             - no contradictory interpretations
-#             - one single coherent result set
-#     """
-
-def build_bazi_prompt(bazi_data, lang="en"):
-    """
-    Build a BaZi LLM prompt that emphasizes the specific year
-    and following 蘇民峰's philosophy.
-    """
-    import json
-
-    year = bazi_data.get("year", 2026)
-    
+    # TODO: Left this commented for reference
     # return f"""
-    #     As a professional Chinese fortune-teller and life coach adhering to 蘇民峰's philosophy, your task is to provide a balanced analysis of the given BaZi data. Focus on balancing the strongest elements rather than enhancing them.
+    #     ROLE:
+    #     You are a master of classical BaZi (子平術), strictly trained in the Ziping (子平) tradition.
 
     #     Input BaZi data:
-    #     {json.dumps(bazi_data, ensure_ascii=False)}
+    #         {json.dumps(bazi_data, ensure_ascii=False)}
 
-    #     Generate a **JSON report ONLY** with the following structure, emphasizing what is unique or different for the year {year}:
+    #     LANGUAGE:
+    #         Use language: {lang}
+
+    #     SCOPE & SOURCE RULES (ABSOLUTE):
+    #     - Analyze ONLY the provided BaZi chart data and the specified year {target_year}.
+    #     - Do NOT use modern psychology, generic life advice, or non-Ziping metaphysics.
+    #     - All conclusions must be derived from Day Master strength, Month Branch priority, Five-Element balance, and seasonal 調候.
+    #     - Do NOT use or copy example wording from wthin (e.g.) but use your reasoning to generate original text.
+
+    #     ANALYSIS ORDER (MUST FOLLOW):
+    #     1. Use the provided Four Pillars (Year, Month, Day, Hour) and Day Master.
+    #     2. Determine Day Master strength and seasonal 調候.
+    #     3. Quantify Five-Element distribution across the entire chart.
+    #     4. Describe overall structure, dominant forces, and key conflicts.
+    #     5. Apply balance-first resolution logic.
+    #     6. Integrate year {target_year} and explain what is ACTIVATED or CHANGED.
+
+    #     DETERMINISM RULES:
+    #     - Provide ONE single coherent interpretation.
+    #     - No alternatives, no conditional branches, no contradictions.
+
+    #     OUTPUT RULES:
+    #     - Output STRICTLY valid JSON only.
+    #     - No markdown, no extra text.
+
+    #     VERBOSITY REQUIREMENTS:
+    #     - Explanatory fields must use full classical-style reasoning sentences.
+    #     - Avoid single-phrase explanations where narrative is requested.
+    #     - Example of careers can be (but not limited to): Technology, SW development, Finance, Healthcare, Education, Arts, Engineering, Sales, Management.
+
+    #     OUTPUT JSON SCHEMA (MUST MATCH EXACTLY):
 
     #     {{
-    #         "lucky_elements": {{
-    #             "favorable_elements": [],
-    #             "unfavorable_elements": []
+    #     "core_analysis": {{
+    #         "overall_structure": "Detailed narrative explanation of the chart’s elemental structure and seasonal condition.",
+    #         "key_conflict": {{
+    #         "summary": "Short classical phrase",
+    #         "explanation": "Full explanation of why this conflict forms and how it affects the chart."
     #         }},
-    #         "lucky_colors_numbers": {{
-    #             "colors": [],
-    #             "numbers": []
+    #         "day_master": {{
+    #         "element": "string",
+    #         "strength": "string",
+    #         "seasonal_analysis": "Detailed explanation of 調候 needs."
     #         }},
-    #         "regional_advice": {{
-    #             "favorable_regions": [],
-    #             "unfavorable_regions": [],
-    #             "directions": "",
-    #             "reasoning": ""
+    #         "contradictions": [
+    #         {{
+    #             "pattern": "string",
+    #             "impact": "Detailed explanation of the life implication."
     #         }},
-    #         "career_and_investment": {{
-    #             "favorable_careers": [],
-    #             "unfavorable_careers": [],
-    #             "investment_tendency": ""
+    #         {{
+    #             "pattern": "string",
+    #             "impact": "Detailed explanation of the life implication."
     #         }},
-    #         "year_{year}_outlook": {{
-    #             "theme": "",
-    #             "health": "",
-    #             "relationships": "",
-    #             "career": "",
-    #             "investment": "",
-    #             "key_advice": ""
+    #         {{
+    #             "pattern": "string",
+    #             "impact": "Detailed explanation of the life implication."
+    #         }}
+    #         ]
+    #     }},
+    #     "five_elements_analysis": {{
+    #         "pillar_analysis": "Detailed analysis of how each pillar (Year, Month, Day, Hour) contributes to Five-Element balance.",
+    #         "element_flow": "Explain how elements generate, control, or weaken each other across the chart.",
+    #         "overall_judgement": "Classical concluding judgement phrase with explanation."
     #         }},
-    #         "amulet": "" 
+    #     "personality_and_traits": {{
+    #         "strengths": "Narrative explanation of personality advantages derived from the chart.",
+    #         "weaknesses": "Narrative explanation of personality limitations or risks.",
+    #         "suitable_fields": "Explain suitable industries or roles with BaZi reasoning.",
+    #         "avoid_fields": "Explain unsuitable industries or roles with BaZi reasoning."
+    #     }},
+    #     "auspicious_elements": {{
+    #         "favorable_elements": ["string"],
+    #         "reasoning": "Explain why these elements restore balance.",
+    #         "colors": ["string"],
+    #         "numbers": ["string"],
+    #         "directions": ["string"],
+    #         "climate": ["string"],
+    #         "terrain": ["string"],
+    #         "usage_tips": "Concrete daily-life or professional usage suggestions.",
+    #         "avoid": ["string"]
+    #     }},
+    #     "career_and_investment": {{
+    #         "suitable_paths": "Narrative explanation of suitable career and wealth paths.",
+    #         "avoidance_paths": "Narrative explanation of unsuitable paths.",
+    #         "investment_tendency": "Narrative wealth strategy description."
+    #     }},
+    #     "year_{target_year}_insight": {{
+    #         "theme": "string",
+    #         "yearly_explanation": "Detailed explanation of how the year interacts with the natal chart.",
+    #         "investment_risk": "Specific risk timing or pattern explanation.",
+    #         # "key_advice": "Concrete, actionable advice grounded in Five-Element logic."
+    #     }},
+    #     "conclusion": "Classical-style closing summary (1–2 paragraphs).",
+    #     "amulet": {{
+    #         "item": "string",
+    #         "reason": "Why this amulet helps restore balance in this chart and year."
     #     }}
+    #     }}
+    #     """
 
-    #     Instructions for the LLM:
 
-    #     1. Analyze the provided BaZi chart to identify the strongest element(s) as the PRIMARY reference. Recommend regions, directions, colors, numbers, and careers that BALANCE these elements (do NOT reinforce them).
-
-    #     2. Pay special attention to opportunities, challenges, and changes unique to {year}. Highlight how this year differs from previous years in terms of Five-Element interactions and their impact on the individual's life aspects.
-
-    #     3. Discuss seasonal, directional, and Five-Element interactions specific to {year} and the given BaZi chart. Emphasize any new or changing dynamics.
-
-    #     4. In career, relationships, and health sections, describe what is NEW or DIFFERENT this year while maintaining Five-Element balance.
-
-    #     5. Ensure lucky elements, colors, numbers, regions, and directions are derived from the interaction between the BaZi chart and the year {year}, strictly following balance-first principles.
-
-    #     6. Regional advice should be broad, using only global regions: East Asia, Southeast Asia, South Asia, Middle East, Europe, Africa, North America, South America, Oceania. Do NOT mention countries, cities, provinces, climates, or local features.
-
-    #     7. Suggest ONE specific amulet beneficial for {year} that aids in restoring Five-Element balance.
-
-    #     8. Output STRICTLY valid JSON only. No explanations, no markdown, no examples, no extra text.
-
-    #     9. Use only the following 8 directions: North, Northeast, East, Southeast, South, Southwest, West, Northwest.
-
-    #     10. Use language: {lang}.
-
-    #     11. Apply deterministic reasoning ONLY: no alternatives, no multiple options, no contradictory interpretations—provide one single coherent result set.
-    # """
-
+    """
+    Build a Gold Prompt v2.0 for LLM BaZi analysis.
+    Fully dynamic, classical narrative, Ten Gods and Five-Element reasoning are derived from chart.
+    """
     return f"""
-        You are a master of classical Chinese BaZi命理 (子平術), trained in the authentic Ziping tradition. Your analysis must follow these core principles:
-        1. First determine if the Day Master (日主) is strong or weak based on monthly branch, support from other pillars, and hidden stems.
-        2. Prioritize 調候用神 (seasonal regulation): e.g., autumn-born Metal needs Water to cool and refine; summer-born Wood needs Water to moisten.
-        3. Favorable elements are those that either: (a) support a weak Day Master, (b) drain/cool an overly dry/hot chart, or (c) resolve harmful clashes.
-        4. Never assume "strong element = bad". Instead, judge based on balance, season, and function.
+        You are a professional Chinese BaZi (八字) master and life consultant with decades of experience in the Ziping (子平) tradition. 
 
-        Input BaZi data:
-        {json.dumps(bazi_data, ensure_ascii=False)}
+        Your goal is to generate a **full BaZi report** in **classical narrative style**, for the given birth chart and target year {target_year}. Include:
 
-        Generate a **JSON report ONLY** with the following structure, emphasizing what is unique or different for the year {year}:
+        - Four Pillars overview
+        - Ten Gods (十神) derived dynamically from the Day Master
+        - Five-Element (五行) balance and flow
+        - Personality, career, and age-phase judgement
+        - Auspicious elements and practical advice
+        - Yearly analysis and investment strategy for {target_year}
+        - One amulet recommendation
+        - Final concise advice summary
+
+        ━━━━━━━━━━━━━━━━━━━━━━
+        INPUT
+        ━━━━━━━━━━━━━━━━━━━━━━
+        BaZi data: {json.dumps(bazi_data, ensure_ascii=False)}
+        Target year: {target_year}
+        Language: {lang}
+
+        ━━━━━━━━━━━━━━━━━━━━━━
+        ANALYSIS RULES
+        ━━━━━━━━━━━━━━━━━━━━━━
+        1. **Four Pillars & Day Master**
+        - Identify Day Master (日主) first.
+        - Include all four pillars as a single string: "年柱/月柱/日柱/时柱".
+
+        2. **Ten Gods Derivation**
+        - Dynamically derive all Ten Gods (印星, 官杀, 财星, 比肩, 劫财, 食神, 伤官, 正印, 正财, etc.) from the Day Master and chart interactions.
+        - Only include stars that actually appear in the chart.
+        - For each derived star, provide:
+            - Name (e.g., 印星)
+            - Classical narrative explanation of its effect on personality, career, wealth
+            - Interaction with Day Master and other stars
+            - Metaphors if applicable (e.g.,「火炎土燥，金脆木枯」)
+
+        3. **Five-Element Analysis**
+        - Quantify element strength numerically (0–5 per element).
+        - Analyze element flow, seasonal influence, and overall balance.
+        - Identify core conflicts and which elements resolve them.
+        - Provide long-form narrative explaining element distribution, pillar contributions, flow, conflicts, and resolution.
+
+        4. **Personality & Career**
+        - Explain personality strengths and weaknesses derived from Ten Gods and Five-Element interactions.
+        - Suggest favorable and unfavorable career paths using BaZi logic.
+        - Include age-phase judgement: early life (≤45), mid-life (45–55), late life (55+).
+
+        5. **Auspicious Elements & Practical Advice**
+        - Suggest favorable colors, numbers, directions, regions, climate, terrain based on element balance.
+        - Include reasoning in classical narrative.
+        - Provide concrete usage tips (daily life, work, or investment).
+
+        6. **Target Year {target_year} Analysis**
+        - Explain how the year {target_year} interacts with the natal chart.
+        - Highlight new activations, changes, risks, and opportunities.
+        - Provide year-specific investment and wealth strategy.
+
+        7. **Amulet Recommendation**
+        - Suggest exactly one amulet and explain why it restores balance for this chart and year.
+
+        ━━━━━━━━━━━━━━━━━━━━━━
+        OUTPUT RULES
+        ━━━━━━━━━━━━━━━━━━━━━━
+        - Return **STRICTLY valid JSON**, no markdown, no extra text.
+        - Each narrative field can be long-form classical style.
+        - Do NOT predefine any Ten God keys; they must be dynamically derived.
+        - Include all derived stars in the "ten_gods_analysis" object with the star name as the key.
+
+        Required JSON schema:
 
         {{
-            "lucky_elements": {{
-                "favorable_elements": [],
-                "unfavorable_elements": []
-            }},
-            "lucky_colors_numbers": {{
-                "colors": [],
-                "numbers": []
-            }},
-            "regional_advice": {{
-                "favorable_regions": [],
-                "unfavorable_regions": [],
-                "directions": "",
-                "reasoning": ""
-            }},
-            "career_and_investment": {{
-                "favorable_careers": [],
-                "unfavorable_careers": [],
-                "investment_tendency": ""
-            }},
-            "year_{year}_outlook": {{
-                "theme": "",
-                "health": "",
-                "relationships": "",
-                "career": "",
-                "investment": "",
-                "key_advice": ""
-            }},
-            "amulet": "" 
+        "five_elements_strength": {{
+            "Wood": 0-5,
+            "Fire": 0-5,
+            "Earth": 0-5,
+            "Metal": 0-5,
+            "Water": 0-5
+        }},
+        "five_elements_analysis": "Long classical narrative explaining pillar contributions, flow, balance, conflicts, and resolution.",
+        "ten_gods_analysis": {{
+            "Each key is a dynamically derived Ten God": "Long classical narrative explaining this star's effect and interactions."
+        }},
+        "personality_and_career_logic": "Long narrative integrating Ten Gods, element balance, seasonal context, and age-phase.",
+        "career_favorable": ["string", "..."],
+        "career_unfavorable": ["string", "..."],
+        "age_phase_judgement": "Narrative explaining early/mid/late life phases and fortune shifts.",
+        "auspicious_elements": {{
+            "colors": ["string"],
+            "numbers": ["string"],
+            "directions": ["string"],
+            "regions": ["string"],
+            "climate": ["string"],
+            "terrain": ["string"],
+            "usage_tips": "Concrete daily-life or professional usage suggestions",
+            "avoid": ["string"]
+        }},
+        "year_{target_year}_analysis": "Long classical narrative for {target_year}, highlighting new dynamics, activated elements, and conflicts.",
+        "investment_strategy_{target_year}": "Narrative describing wealth/investment approach for {target_year}.",
+        "amulet": {{
+            "item": "string",
+            "reason": "Why it restores balance"
+        }},
+        "final_advice": "Concise classical-style summary (1–2 paragraphs)."
         }}
 
-        Instructions:
+        ━━━━━━━━━━━━━━━━━━━━━━
+        DETERMINISM
+        ━━━━━━━━━━━━━━━━━━━━━━
+        - Only one coherent result set.
+        - No alternatives or conditional branches.
+        - Apply deterministic BaZi reasoning, integrating Ten Gods, Five-Element balance, and seasonal influences.
+    """
 
-        1. Analyze the Day Master's strength and seasonal context FIRST. For example:辛金 born in 戌月 (autumn) is typically dry and brittle, requiring Water for 調候—even if Fire appears dominant.
-
-        2. Derive favorable/unfavorable elements from classical use-god logic (用神/忌神), NOT by simply weakening the most frequent element.
-
-        3. Regional advice must reflect the **climatic elemental nature** of each region:
-        - Cold/humid = Water (e.g., North America, Europe)
-        - Temperate/rainy = Wood + Water (e.g., East Asia)
-        - Hot/dry = Fire + Earth (e.g., Middle East, Africa, South/Southeast Asia)
-        Use only these allowed regions: East Asia, Southeast Asia, South Asia, Middle East, Europe, Africa, North America, South America, Oceania.
-
-        4. Directions must align with classical Eight Mansion or seasonal Qi flow (e.g., North = Water, East = Wood). Choose ONE direction that best supports the use-god.
-
-        5. Focus on what is NEW in {year}: how the year pillar ({year} = 丙午) interacts with the natal chart—especially clashes (冲), combinations (合), or elemental shifts.
-
-        6. Careers and investments should match the functional role of favorable elements (e.g., Water = wisdom, flow, healing → education, logistics, healthcare).
-
-        7. Amulet: suggest ONE traditional object (e.g., black obsidian, jade, crystal) that embodies the primary favorable element.
-
-        8. Output STRICTLY valid JSON. No extra text, markdown, or explanations.
-
-        9. Use language: {lang}.
-
-        10. Apply deterministic, coherent reasoning—no contradictions, no multiple interpretations.
-        """
 
 # -----------------------------
 # OpenAI implementation
 # -----------------------------
-def _generate_oa(bazi_data, lang="en"):
-    prompt = build_bazi_prompt(bazi_data, lang)
+def _generate_oa(bazi_data, target_year="2026", lang="en"):
+    prompt = build_bazi_prompt(bazi_data, target_year=target_year, lang=lang)
     resp = client_oa.chat.completions.create(
         model = OPENAI_LLM_MODEL,
         messages = [
@@ -333,9 +326,9 @@ def _generate_oa(bazi_data, lang="en"):
 # -----------------------------
 # Hunyuan implementation
 # -----------------------------
-def _generate_hy(bazi_data, lang="en"):
+def _generate_hy(bazi_data, target_year="2026", lang="en"):
     client = get_hunyuan_client()
-    prompt = build_bazi_prompt(bazi_data, lang)
+    prompt = build_bazi_prompt(bazi_data, target_year=target_year, lang=lang)
 
     messages = [
         {"Role": "system", "Content": "You are a professional Chinese fortune-teller and life coach"},
@@ -361,9 +354,9 @@ def _generate_hy(bazi_data, lang="en"):
 # -----------------------------
 # Qianwen implementation
 # -----------------------------
-def _generate_qw(bazi_data, lang="en"):
+def _generate_qw(bazi_data, target_year="2026", lang="en"):
     system_prompt = "You are a professional Chinese fortune-teller and life coach"
-    prompt = build_bazi_prompt(bazi_data, lang)
+    prompt = build_bazi_prompt(bazi_data, target_year=target_year, lang=lang)
 
     response = dashscope.Generation.call(
         model = QIANWEN_LLM_MODEL,
@@ -407,35 +400,34 @@ def enrich_with_localized_pillars(bazi_basic, lang="en"):
 # -----------------------------
 # Unified interface
 # -----------------------------    
-def generate_bazi_narrative(bazi_data, llm="openai", lang="en"):
+def generate_bazi_narrative(bazi_data, target_year="2026", llm="openai", lang="en"):
     """
     Generate BaZi narrative JSON using the specified LLM.
     llm: "openai", "hunyuan", "qianwen"
     lang: "en" or "cn"
     """
     if llm.lower() in ["openai", "oa"]:
-        return _generate_oa(bazi_data, lang)
+        return _generate_oa(bazi_data, target_year=target_year, lang=lang)
     elif llm.lower() in ["hunyuan", "hy"]:
-        return _generate_hy(bazi_data, lang)
+        return _generate_hy(bazi_data, target_year=target_year, lang=lang)
     elif llm.lower() in ["qianwen", "qw"]:
-        return _generate_qw(bazi_data, lang)
+        return _generate_qw(bazi_data, target_year=target_year, lang=lang)
     else:
         raise ValueError(f"Unknown LLM: {llm}")
 
-def generate_bazi_narrative_safe(bazi_data, llm="openai", lang="en"):
+def generate_bazi_narrative_safe(bazi_data, target_year="2026", llm="openai", lang="en"):
     """
     Wrapper with timeout + fallback.
     Does NOT change JSON schema.
     """
 
     def _run():
-        return generate_bazi_narrative(bazi_data, llm=llm, lang=lang)
-
+        return generate_bazi_narrative(bazi_data, target_year=target_year, llm=llm, lang=lang)
     with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
         future = executor.submit(_run)
         try:
             llm_reflection = future.result(timeout=LLM_TIMEOUT)
-            print(f"=== LLM SUCCESS： 【{llm}】 ===\n OUTPUT: {llm_reflection}\n{'-'*40}")
+            print(f"=== LLM SUCCESS： 【{llm}】 ===\nOUTPUT:\n{llm_reflection}\n{'-'*40}")
             return llm_reflection
 
         except Exception as e:
@@ -485,6 +477,6 @@ if __name__ == "__main__":
 
     llm_name="qw"
     print(f"\n=== Querying LLM: {llm_name} ===")
-    result = generate_bazi_narrative_safe(test_bazi, llm=llm_name, lang='cn')
+    result = generate_bazi_narrative_safe(test_bazi, target_year="2026", llm=llm_name, lang='cn')
     print(str(result))
     
