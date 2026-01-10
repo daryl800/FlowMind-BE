@@ -256,13 +256,6 @@ def build_bazi_prompt(bazi_data, target_year=2026, lang="zh"):
         Required JSON schema:
 
         {{
-        "five_elements_strength": {{
-            "Wood": 0-5,
-            "Fire": 0-5,
-            "Earth": 0-5,
-            "Metal": 0-5,
-            "Water": 0-5
-        }},
         "five_elements_analysis": "Long classical narrative explaining pillar contributions, flow, balance, conflicts, and resolution.",
         "ten_gods_analysis": {{
             "Each key is a dynamically derived Ten God": "Long classical narrative explaining this star's effect and interactions."
@@ -311,7 +304,7 @@ def _generate_oa(bazi_data, target_year="2026", lang="en"):
             {"role":"user","content":prompt}
         ],
         temperature = 0 , # ✅ 設定為0，減低隨機性，輸出會固定
-        max_tokens = 1500
+        max_tokens = 2000
     )
 
     if not resp.choices or not resp.choices[0].message:
@@ -362,7 +355,7 @@ def _generate_qw(bazi_data, target_year="2026", lang="en"):
         model = QIANWEN_LLM_MODEL,
         prompt = system_prompt + "\n\n" + prompt,
         temperature = 0, # ✅ 設定為0，減低隨機性，輸出會固定
-        max_tokens = 1500
+        max_tokens = 2000
     )
 
     output_text = None
@@ -437,6 +430,7 @@ def generate_bazi_narrative_safe(bazi_data, target_year="2026", llm="openai", la
                 print(f"【LLM FALLBACK】Switching from 【{llm}】 to 【{FALLBACK_LLM}】")
                 return generate_bazi_narrative_safe(
                     bazi_data,
+                    target_year=target_year,
                     llm=FALLBACK_LLM,
                     lang=lang
                 )
