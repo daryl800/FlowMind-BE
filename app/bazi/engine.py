@@ -184,12 +184,39 @@ def calc_bazi_fixed(dt: datetime, tz_name: str, longitude: float):
         "Chen":"Earth","Si":"Fire","Wu":"Fire","Wei":"Earth",
         "Shen":"Metal","You":"Metal","Xu":"Earth","Hai":"Water"
     }
+
+    # Hidden stems (藏干) with weights
+    ZHI_HIDDEN_STEMS = {
+        "Zi":  [("Ren", 1.0)],
+        "Chou":[("Ji", 0.6), ("Gui", 0.3), ("Xin", 0.1)],
+        "Yin": [("Jia", 0.6), ("Bing", 0.3), ("Wu", 0.1)],
+        "Mao": [("Yi", 1.0)],
+        "Chen":[("Wu", 0.6), ("Yi", 0.3), ("Gui", 0.1)],
+        "Si":  [("Bing", 0.6), ("Wu", 0.3), ("Geng", 0.1)],
+        "Wu":  [("Ding", 0.6), ("Ji", 0.4)],
+        "Wei": [("Ji", 0.6), ("Yi", 0.3), ("Ding", 0.1)],
+        "Shen":[("Geng", 0.6), ("Ren", 0.3), ("Wu", 0.1)],
+        "You": [("Xin", 1.0)],
+        "Xu":  [("Wu", 0.6), ("Xin", 0.3), ("Ding", 0.1)],
+        "Hai": [("Ren", 0.6), ("Jia", 0.4)],
+    }
+
     
-    fe_strength = {"Wood":0,"Fire":0,"Earth":0,"Metal":0,"Water":0}
+    fe_strength = {"Wood":0.0,"Fire":0.0,"Earth":0.0,"Metal":0.0,"Water":0.0}
+
+    # 1️⃣ Count Heavenly Stems (明干)
     for p in pillars.values():
-        for key in ["gan","zhi"]:
-            e = ELEMENT_MAP[p[key]]
-            fe_strength[e] += 1
+        gan = p["gan"]
+        e = ELEMENT_MAP[gan]
+        fe_strength[e] += 1.0
+
+    # 2️⃣ Count Earthly Branch Hidden Stems (藏干)
+    for p in pillars.values():
+        zhi = p["zhi"]
+        for hidden_gan, weight in ZHI_HIDDEN_STEMS[zhi]:
+            e = ELEMENT_MAP[hidden_gan]
+            fe_strength[e] += weight
+
 
     # 🔟 Return structure that matches BOTH:
     # - Has the same keys/format as (1)
@@ -295,6 +322,7 @@ if __name__ == "__main__":
     for case in test_cases:
         result = calc_bazi(case["dt"], case["tz"])
         enrich_with_localized_pillars(result, lang="cn")
+        pillars = result["pillars"]
         bazi_str_cn = f"{result['year']['label']} {result['month']['label']} {result['day']['label']} {result['hour']['label']}"
         match = bazi_str_cn == case["expected"]
         status = "✅ PASS" if match else "❌ FAIL"
@@ -302,7 +330,11 @@ if __name__ == "__main__":
         print(f"  Got:     {bazi_str_cn}")
         print(f"  Expected:{case['expected']}")
         print(f"  TZ used: {case['tz']}")
-        print(f"  Lon used:{result['longitude_used']}")
-        print(f"  True Solar:{result['true_solar_time']}")
-        print(f"  Solar Date Used:{result['solar_date_used']}")
+        if "longitude_used" in result:
+            print(f"  Lon used:{result['longitude_used']}")
+        if "true_solar_time" in result:
+            print(f"  True Solar:{result['true_solar_time']}")
+        if "solar_date_used" in result:
+            print(f"  Solar Date Used:{result['solar_date_used']}")
+
         print("-"*50)
