@@ -17,6 +17,6 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 # MODEL = "qwen-max"
 # MODEL = "qwen-plus"
 # MODEL = "qwen-flash"
-QIANWEN_LLM_MODEL = 'qwen-plus'
+QIANWEN_LLM_MODEL = 'qwen3-max'
 HUNYUAN_LLM_MODEL = 'hunyuan-pro'
 OPENAI_LLM_MODEL = 'gpt-4.1-mini'

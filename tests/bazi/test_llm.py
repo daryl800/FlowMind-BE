@@ -18,11 +18,11 @@ sample_inputs = [
         },
         "day_master": "Xin",
         "five_elements_strength": {            
-            "Wood": 1,
-            "Fire": 3,
-            "Earth": 2,
-            "Metal": 2,
-            "Water": 0
+            "Wood": 1.0,
+            "Fire": 3.3,
+            "Earth": 1.0,
+            "Metal": 2.4,
+            "Water": 0.3
         },        
         "year": "2026"
     }
@@ -46,7 +46,7 @@ def generate_with_retry(bazi_data, target_year="2026", llm="openai", lang="en", 
 # -----------------------------
 for i, bazi in enumerate(sample_inputs, 1):
     
-    llm = "qw"  # Change as needed: "openai", "qianwen", "tencent"
+    llm = "qianwen"  # Change as needed: "openai", "qianwen", "hunyuan"
     lang = "cn"
 
     print(f"\n=== Test Case LLM: #{llm} ===")
