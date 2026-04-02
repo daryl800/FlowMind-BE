@@ -38,7 +38,8 @@ def generate_bazi(req: BaziRequest):
             location=req.location,
             year=req.year,
             lang=req.lang,
-            llm=req.llm
+            llm=req.llm,
+            personality_profile=req.personality_profile
         )
 
         # 3️⃣ Attach language flag (optional use downstream)

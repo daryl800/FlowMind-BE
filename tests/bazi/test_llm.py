@@ -46,7 +46,7 @@ def generate_with_retry(bazi_data, target_year="2026", llm="openai", lang="en", 
 # -----------------------------
 for i, bazi in enumerate(sample_inputs, 1):
     
-    llm = "qianwen"  # Change as needed: "openai", "qianwen", "hunyuan"
+    llm = "hunyuan"  # Change as needed: "openai", "qianwen", "hunyuan"
     lang = "cn"
 
     print(f"\n=== Test Case LLM: #{llm} ===")

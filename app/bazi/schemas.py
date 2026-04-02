@@ -9,3 +9,4 @@ class BaziRequest(BaseModel):
     year: str = Field(..., example="2026")
     llm: Literal["openai", "qianwen", "hunyuan"] = "openai"
     lang: Literal["en", "cn"] = "en"
+    personality_profile: Optional[dict] = None
